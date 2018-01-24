@@ -1,0 +1,74 @@
+---
+title: "Pmweb Report"
+author: "Paulo Souza Junior"
+date: "January 23, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require("dplyr")
+require("ggplot2")
+require(scales)
+library(plotly)
+require(lubridate)
+require(tidyverse)
+```
+
+## Introdução
+
+Este documento apresenta um relatório analisando os dados abertos da cidade de Porto Alegre. O mesmo analisa dados relativos aos anos 2000 até 2016. Este relatório é gerado automaticamente através da linguagem R, através do R Markdown e R Knit.
+
+Inicialmente os arquivos a serem analisados são carregados e estruturados de forma equivalente para garantir uma analise combinatória destes dados. Isto é necessário, visto que os dados disponibilizados em datapoa^[http://datapoa.com.br] não possuem a mesma distribuição de colunas e formato de datas. 
+
+```{r loading}
+
+path = "~/poa_opendata/dataset/"
+
+fNames <- list.files(path, pattern = "acidentes-2*")
+
+acidentes <- lapply(paste(path, fNames, sep=""), function(fNames){
+  data.frame(read.csv(fNames, header=TRUE, sep=";"))
+})
+
+aux <- data.frame()
+year <- 2000
+
+for(i in 1:14){
+  acidentes[[i]]$year <- year
+  aux <- rbind(aux, select(acidentes[[i]], DATA_HORA, TEMPO, UPS, year))
+  year = year + 1
+}
+
+aux$freq <- 1
+
+```
+
+## Estrutura
+
+As relações das condições atmosféricas, severidade dos acindentes e horário das ocorrências são apresentados a seguir.
+
+```{r acidentes}
+
+plot <- aux %>% group_by(year, UPS, TEMPO, time = floor_date(as.POSIXct(format(strptime(DATA_HORA, "%Y%m%d %H:%M"), format='%H:%M'), format="%H:%M"), "1 hours")) %>%
+  summarise(freq = n())
+
+ggplot(plot, aes(x = as.POSIXct(time, format="%H:%M"), 
+                y = freq, fill= TEMPO)) + geom_bar(stat = 'identity', position = 'dodge')  +
+  labs(x="Hora") + facet_wrap(~UPS, nrow=3) +
+  scale_x_datetime(date_breaks = "2 hour",
+                   date_labels = "%H:%M") + theme(legend.position = "bottom")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

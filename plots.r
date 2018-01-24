@@ -29,7 +29,7 @@ aux <- aux %>% group_by(year, UPS, TEMPO, time = floor_date(as.POSIXct(format(st
   summarise(freq = n())
 
 ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
-                y = freq, colour= TEMPO)) + geom_jitter()+ facet_wrap(~year) + geom_smooth(method="auto", se=TRUE, fullrange=FALSE, level=0.95) +
+                y = freq, colour= TEMPO)) + geom_jitter()+ facet_wrap(~UPS, nrow = 3) + geom_smooth(method="auto", se=TRUE, fullrange=FALSE, level=0.95, alpha=0.5) +
   ggtitle("Total de acidentes x Hora x Clima") 
 
 ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
@@ -42,13 +42,16 @@ ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"),
 
 ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
                 y = freq, fill= TEMPO)) + geom_bar(stat = 'identity', position = 'dodge')  +
-  labs(x="Hora") + facet_wrap(~year)
+  labs(x="Hora") + facet_wrap(~UPS, nrow=3) +
+  scale_x_datetime(date_breaks = "2 hour",
+                   date_labels = "%H:%M")
 
+aux$UPS <- as.factor(aux$UPS)
 
 res <- aux %>% group_by(time, UPS, TEMPO) %>%
-  summarise(freq = mean(freq, na.rm = TRUE), se=3*sd(time)/sqrt(n()))
+  summarize(freq = mean(freq), se=3*sd(time)/sqrt(n()))
 
-p <- plot_ly(aux, x = ~time, y = ~as.factor(UPS), z = ~freq, color = ~TEMPO, type = 'scatter3d', mode = 'lines') %>%
+p <- plot_ly(aux, x = ~time, y = ~UPS, z = ~freq, color = ~TEMPO, type = 'scatter3d', mode = 'lines') %>%
   layout(scene = list(xaxis = list(title = 'time'),
                       yaxis = list(title = 'UPS'),
                       zaxis = list(title = 'count')))
