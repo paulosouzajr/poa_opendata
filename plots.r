@@ -4,9 +4,10 @@ require(scales)
 library(plotly)
 require(lubridate)
 require(tidyverse)
+require(reshape2)
 
-#setwd("~/Documents/poa_opendata") #Necessario adicionar path onde os arquivos estao
-setwd("~/poa_opendata/dataset")
+setwd("~/Documents/pmweb/dataset") #Necessario adicionar path onde os arquivos estao
+#setwd("~/poa_opendata/dataset")
 
 fNames <- list.files(pattern = "acidentes-2*")
 
@@ -17,20 +18,23 @@ acidentes <- lapply(fNames, function(fNames){
 aux <- data.frame()
 year <- 2000
 
-for(i in 1:14){
+for(i in 1:17){
   acidentes[[i]]$year <- year
+  if(i > 15){
+    acidentes[[i]]$DATA_HORA <- format(as.POSIXlt(acidentes[[i]]$DATA_HORA, format="%Y-%m-%dT%H:%M"), "%Y%m%d %H:%M")
+  }
   aux <- rbind(aux, select(acidentes[[i]], DATA_HORA, TEMPO, UPS, year))
   year = year + 1
 }
+
 
 aux$freq <- 1
 
 aux <- aux %>% group_by(year, UPS, TEMPO, time = floor_date(as.POSIXct(format(strptime(DATA_HORA, "%Y%m%d %H:%M"), format='%H:%M'), format="%H:%M"), "1 hours")) %>%
   summarise(freq = n())
 
-ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
-                y = freq, colour= TEMPO)) + geom_jitter()+ facet_wrap(~UPS, nrow = 3) + geom_smooth(method="auto", se=TRUE, fullrange=FALSE, level=0.95, alpha=0.5) +
-  ggtitle("Total de acidentes x Hora x Clima") 
+ggplot(aux, aes(x = time, 
+                y = UPS, shape= TEMPO, colour=TEMPO)) + geom_jitter()+ facet_wrap(~year, ncol = 3)+ ggtitle("Total de acidentes x Hora x Clima") 
 
 ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
                 y = freq, colour= as.factor(UPS))) + geom_jitter()+ facet_wrap(~year) + geom_smooth(method = "auto") +
@@ -42,9 +46,13 @@ ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"),
 
 ggplot(aux, aes(x = as.POSIXct(time, format="%H:%M"), 
                 y = freq, fill= TEMPO)) + geom_bar(stat = 'identity', position = 'dodge')  +
-  labs(x="Hora") + facet_wrap(~UPS, nrow=3) +
-  scale_x_datetime(date_breaks = "2 hour",
-                   date_labels = "%H:%M")
+  labs(x="Hora") + facet_wrap(~UPS, nrow=3, scales="free_y") +
+  scale_x_datetime(date_breaks = "1 hour",
+                   date_labels = "%H:%M") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(aux, aes(x = as.factor(UPS), 
+                y = freq, fill= TEMPO)) + geom_boxplot()  +
+  labs(x="Hora")
 
 aux$UPS <- as.factor(aux$UPS)
 
@@ -56,5 +64,29 @@ p <- plot_ly(aux, x = ~time, y = ~UPS, z = ~freq, color = ~TEMPO, type = 'scatte
                       yaxis = list(title = 'UPS'),
                       zaxis = list(title = 'count')))
 
+ggplot(aux, aes(x = time, 
+                y = UPS, shape= TEMPO, colour=TEMPO)) + geom_jitter()+ facet_wrap(~year, ncol = 3)+ ggtitle("Total de acidentes x Hora x Clima") 
 
+perdas <- data.frame()
+
+year <- 2000
+for(i in 1:17){
+  acidentes[[i]]$ANO <- year
+  if(i < 15){
+    acidentes[[i]]$ONIBUS_MET <- 0
+    acidentes[[i]]$FERIDOS_GR <- 0
+  }
+  perdas <- rbind(perdas, select(acidentes[[i]], AUTO, TAXI, LOTACAO, 
+                                 ONIBUS_URB, ONIBUS_MET, ONIBUS_INT, CAMINHAO, 
+                                 MOTO, CARROCA, BICICLETA, OUTRO, FERIDOS, FERIDOS_GR, ANO))
+  year = year + 1
+}
+
+perdas <- as.data.frame(lapply(perdas, function(x) as.numeric(as.character(x))))
+materiais <- perdas %>% group_by(ANO) %>% summarize_all(funs(sum(., na.rm=TRUE)))
+
+ggplot(melt(materiais[,1:12], id.vars="ANO"), aes(x = as.factor(variable), 
+                             y = value, fill=as.factor(ANO))) + geom_bar(position="stack", stat="identity")  +
+  labs(x="Veículo", y = "Ocorrências", fill="Ano") + theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
