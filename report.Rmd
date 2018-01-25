@@ -19,7 +19,7 @@ require(tidyverse)
 
 ## Introdução
 
-Este documento apresenta um relatório analisando os dados abertos da cidade de Porto Alegre. O mesmo analisa dados relativos aos anos 2000 até 2016. Este relatório é gerado automaticamente através da linguagem R, através do R Markdown e R Knit.
+Este documento apresenta um relatório analisando os dados abertos da cidade de Porto Alegre. O mesmo analisa dados relativos aos anos 2000 até 2016. Este relatório é gerado automaticamente através da linguagem R, pelo R Markdown e R Knit.
 
 Inicialmente os arquivos a serem analisados são carregados e estruturados de forma equivalente para garantir uma analise combinatória destes dados. Isto é necessário, visto que os dados disponibilizados em datapoa^[http://datapoa.com.br] não possuem a mesma distribuição de colunas e formato de datas. 
 
