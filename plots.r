@@ -130,3 +130,53 @@ ggplot(melt(FATAIS), aes(x = variable,
                           y = value)) + geom_bar(stat = 'identity', position = 'dodge')  +
   labs(x="Veículo", y = "Ocorrências") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
+
+
+library(rworldmap)
+fr <- get_map("PortoAlegre", zoom = 13, maptype = "terrain", scale = "auto")
+
+perdas <- data.frame()
+
+for(i in 1:17){
+  acidentes[[i]]$year <- year
+  if(i < 15){
+    acidentes[[i]]$ONIBUS_MET <- 0
+    acidentes[[i]]$FERIDOS_GR <- 0
+  }
+  perdas <- rbind(perdas, select(acidentes[[i]], LONGITUDE, LATITUDE, UPS))
+  year = year + 1
+}
+
+pardais <- read.csv("pardais.csv")
+
+map <- ggmap(fr) 
+
+map + geom_point(data = a, aes(x = LONGITUDE, y = LATITUDE, color = "red")) 
+
+library(ggmap)
+
+fr <- get_map("PortoAlegre", zoom = 13, maptype = "roadmap", scale = "auto")
+
+perdas <- data.frame()
+
+for(i in 1:17){
+  perdas <- rbind(perdas, select(acidentes[[i]], LONGITUDE, LATITUDE, UPS, LOG1))
+}
+
+perdas <- perdas %>%
+  group_by(UPS, LOG1) %>%
+  mutate(total.count=n())
+
+perdas <- perdas[!duplicated(perdas$LOG1),]
+
+map <- ggmap(fr) 
+
+perdas$LONGITUDE <- as.numeric(perdas$LONGITUDE <- gsub(",",".",perdas$LONGITUDE,fixed=TRUE))
+perdas$LATITUDE <- as.numeric(perdas$LATITUDE <- gsub(",",".",perdas$LATITUDE,fixed=TRUE))
+#perdas <- perdas[complete.cases(perdas), ]
+map + geom_point(data = perdas, aes(x = LONGITUDE, y = LATITUDE, 
+                                    size = total.count, colour = as.factor(UPS)))+ 
+  labs(x = "LONGITUDE", Y="LATITUDE", size = "Total", colour = "Severidade") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        legend.position = "bottom") 
+

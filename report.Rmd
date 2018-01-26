@@ -73,19 +73,13 @@ ggplot(plot[complete.cases(plot),], aes(x = as.POSIXct(time, format="%H:%M"),
 
 ```
 
-  É possível perceber que a maioria das ocorrências são sobre o tempo bom, tendo seu pico inicial a partir das 6 da manhã. A taxa de ocorrência reduz ao longo do dia, principalmente as 12 horas, tendo novamente um aumento as 18 horas. Logo após as ocorrências de tempo bom, as ocorrências de tempo nublado estão como parte da maioria, principalmente em casos de severidade 1. 
-  
-  Em relação as severidades: casos de severidade 1 são mais frequentes sendo aproximandamente 42% dos casos, seguidos dos casos 5 e 13, 38% e 19% respectivamente. Nos casos de severidade 5, o comportamento das ocorrências não varia em relação ao clima, o total de ocorrências para o tempo chuvoso e nublado é muito próximo. Já para os casos de severidade 13 o clima chuvoso é significante, comparado com as severidades anteriores, onde predomina em relação ao clima nublado e não cadastrado. O mesmo é significativamente alto em horários como 2h, 4h, 6h, 7h da manhã e durante a noite das 18h e 20h. É possivel apontar também, que para horários como as 18 horas, que possui o maior indices de ocorrências severas, não é proporcionalmente alto em clima chuvoso.
+Em relação ao passar dos anos e a severidade dos acidentes. O gráfico abaixo apresenta cada barra representando o número de ocorrência para cada severidade. É possível indicar que o número de acidentes aumento consideravelmente para severidades igual a 1 e 5. E teve uma breve redução em 2005, que logo foi aumentando o número de ocorrências, ao passar dos anos. O ano de 2010 apresentou um alto indice de ocorrências, principalmente para severidades 1 e 13, onde ao passar dos anos, até 2016, teve uma alta redução de ocorrências. É importante destacar o alto indice de acidentes de severidade 13 no ano de 2014, que não é visivel o aumento em casos de severidade 1, porém em casos de severidade 5 há um leve aumento. Isto pode ter sido causado por alguma variavel além, que pode ou não ser encontrada neste dataset (mera especulação). 
 
-  Além disso, é interessante comentar que a opção para clima NAO CADAST (não cadastrado), não foi utilizado em alguns anos ou foi utilizado muito pouco. Em anos como 2000, 2002~2007 quase não houve casos neste fator e em alguns anos altos indices estão presentes (e.g. 2001 e 2009). Como pode ser visto no gráfico abaixo, que apresenta fator de severidade por horário e clima em cores/formas.  
+```{r acidentesano2, warning=FALSE}
 
-```{r acidentesano, fig.height=8, warning=FALSE}
-
-ggplot(plot[complete.cases(plot),], aes(x = time, 
-                y = UPS, shape= TEMPO, colour=TEMPO)) + geom_jitter() +
-  facet_wrap(~year, ncol=3) +
-  ggtitle("Total de acidentes x Hora x Clima")  +
-  scale_x_datetime(date_breaks = "5 hour", date_labels = "%H:%M") + 
+ggplot(plot[complete.cases(plot),], aes(x = as.factor(year), 
+                y = freq, )) + geom_bar(stat = 'identity', position = 'dodge')  +
+  labs(x="Hora") + facet_wrap(~UPS, nrow=3, scales="free_y") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
 
 ```
@@ -107,7 +101,7 @@ for(i in 1:17){
   }
   perdas <- rbind(perdas, select(acidentes[[i]], ID, AUTO, TAXI, LOTACAO, 
                                  ONIBUS_URB, ONIBUS_MET, ONIBUS_INT, CAMINHAO, 
-                                 MOTO, CARROCA, BICICLETA, OUTRO, FERIDOS, FERIDOS_GR))
+                                 MOTO, CARROCA, BICICLETA, OUTRO, FERIDOS, FATAIS))
   year = year + 1
 }
 
@@ -121,7 +115,7 @@ ggplot(materiais[2:12,], aes(x = variable,
 
 ```
 
-O gráfico abaixo apresenta os outros veículos, além de automóveis. Visto que sua incidência é elevada o mesmo foi removido do gráfico para uma melhor visualização dos veículos. Logo atrás dos automóveis, os veículos que mais participaram de acidentes são: Motos, caminhões, taxis e onibus urbanos. Ônibus metropolitanos não faziam parte dos dados até 2014, a partir deste ano a coluna onibus_met passou a existir.
+O gráfico abaixo apresenta os outros veículos, além de automóveis. Visto que sua incidência é elevada o mesmo foi removido do gráfico para uma melhor visualização dos veículos. Logo atrás dos automóveis, os veículos que mais participaram de acidentes são: Motos, caminhões, taxis e onibus urbanos. Ônibus metropolitanos não faziam parte dos dados até 2014, a partir deste ano a coluna onibus_met passou a existir. Além disso, o gráfico abaixo destaca outros tipos de veículos, tornando mais visivel a participação de veículos pesados
 
 ```{r danos, warning=FALSE}
 
@@ -131,7 +125,10 @@ ggplot(materiais[3:12,], aes(x = variable,
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
 ```
 
-```{r danosferidos, warning=FALSE}
+Os próximos gráficos descatacam a participação dos veículos que causaram mais feridos e mortes ao longo dos anos, respecitivamente. Os acidentes que mais causaram ferimentos foram os de automoveis, logo após os acidentes de motocicletas, sendo possível ver claramente os seus altos índices de feridos. 
+
+```{r danosferidos, warning=FALSE, fig.height=4}
+
 feridos <- data.frame(sum(perdas[perdas$AUTO >= 1, ]$FERIDOS, na.rm=TRUE), 
                       sum(perdas[perdas$TAXI >= 1, ]$FERIDOS, na.rm=TRUE),
                       sum(perdas[perdas$LOTACAO >= 1, ]$FERIDOS, na.rm=TRUE),
@@ -153,7 +150,9 @@ ggplot(melt(feridos), aes(x = variable,
 
 ```
 
-```{r danosfatais, warning=FALSE}
+Já o índice de ocorrências com morte possui um comportamento parecido com os de feridos, apesar de houver um crescimento no indice de ocorrências em ônibus urbanos, caminhões e bicicletas. É necessário salientar, que esta analise não demonstra de modo proporcional o índice de acidentes, visto que é acidentes de automóveis são muito mais frequentes que acidentes de outros veículos. Neste caso, acidentes de motos apresentam maiores números de pessoas feridas e mortes.
+
+```{r danosfatais, warning=FALSE, fig.height=4}
 FATAIS <- data.frame(sum(perdas[perdas$AUTO >= 1, ]$FATAIS, na.rm=TRUE), 
                       sum(perdas[perdas$TAXI >= 1, ]$FATAIS, na.rm=TRUE),
                       sum(perdas[perdas$LOTACAO >= 1, ]$FATAIS, na.rm=TRUE),
@@ -174,8 +173,50 @@ ggplot(melt(FATAIS), aes(x = variable,
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
 
 ```
+O gráfico abaixo apresenta a cidade de Porto Alegre, onde os pontos representão as ocorrências de acidentes, para as três possíveis severidades. São muito pontos, que precisam ser agrupadas para melhor entendimento. A ideia inicial seria também adicionar os pardais e semaforos no gráfico, para tornar visual se o índice de ocorrência próximas a essas vias diminui ou aumento. Isto não foi possível até então, como está sendo discutido na próxima seção.
 
+```{r map, warning=FALSE, echo=FALSE, fig.height=10}
+
+library(ggmap)
+
+fr <- get_map("PortoAlegre", zoom = 13, maptype = "terrain", scale = "auto")
+
+perdas <- data.frame()
+
+for(i in 1:17){
+  perdas <- rbind(perdas, select(acidentes[[i]], LONGITUDE, LATITUDE, UPS, LOG1))
+}
+
+perdas <- perdas %>%
+  group_by(UPS, LOG1) %>%
+  mutate(total.count=n())
+
+perdas <- perdas[!duplicated(perdas$LOG1),]
+
+map <- ggmap(fr) 
+
+perdas$LONGITUDE <- as.numeric(perdas$LONGITUDE <- gsub(",",".",perdas$LONGITUDE,fixed=TRUE))
+perdas$LATITUDE <- as.numeric(perdas$LATITUDE <- gsub(",",".",perdas$LATITUDE,fixed=TRUE))
+#perdas <- perdas[complete.cases(perdas), ]
+map + geom_point(data = perdas, aes(x = LONGITUDE, y = LATITUDE, 
+                                    size = total.count, colour = as.factor(UPS)))+ 
+  labs(x = "LONGITUDE", Y="LATITUDE", size = "Total", colour = "Severidade") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        legend.position = "bottom") 
+```
 
 ## Problemas encontrados
 
-Foram encontrados problemas na linha 11084 do dataset relativo ao ano de 2014, que resultou em valores incorretos para a leitura dos acidentes 
+Foram encontrados problemas relacionados a estrutura das coluna nos CSVs, onde algumas colunas não estavam presentes para os anos menores que 2014. Também, foram encontrados problemas em alguns datasets (mais especificamente na linha 11084 do ano de 2014), que resultou em valores incorretos para a leitura dos acidentes. Além disso, não foi possível conciliar a posição das semaforos e pardais, visto que suas colunas não apresentam o mesmo nome/título, porém isso é algo que pode ser trabalho com expressões regulares.
+
+## Metodologia
+
+A linguagem R é um projeto open source, além de ser uma linguagem de programação, um ambiente para computação estatística, modelagem e visualização de dados. A linguagem R apresenta diversos pacotes que possibilitam a sua paralelização. Uma lista atual destes pacotes pode ser encontrada na página do CRAN Task View: High-Performance and Parallel Computing with R, que é a página da entidade que disponibiliza o R e seus pacotes oficiais.
+Há diversos pacotes que utilizam de funções que aproveitam e fazem uso de BigData. Alguns destes pacotes são geralmente implementados em C, Java e outros. O R é um ambiente estatistico para analise de dados, o mesmo auxilia na coleta, inferencia e tratamento de dados afim de determinar comportamentos e extrair informações. Alguns pacotes em R estão disponíveis para trabalhar com BigData, por exemplo o RHadoop. 
+
+Os dados foram analisados de forma rapida, há muito mais a ser explorado deste dataset. E cruzando dados além do que está disponibilizado aqui, por exemplo do clima real de cada dia do ano, é possível inferir em resultados mais precisos e valiosos.
+
+## Insights
+
+É possível extrair ainda mais destes dados, uma analise seria os pontos de ocorrência que causaram maiores casos de acidentes com motos, podendo determinar o fator que maximizou o mesmo. Condiçoes de trânsito, asfalto, clima, afim de evitar esta categoria de ocorrência que possui altos indices de mortos e feridos. Também, uma ideia seria determinar os pontos que mais causaram acidentes envolvendo bicicletas buscando prover uma infra estrutura de trânsito que se preocupe com o ciclista e possibilite mais segurança. 
+
