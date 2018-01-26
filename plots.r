@@ -6,8 +6,8 @@ require(lubridate)
 require(tidyverse)
 require(reshape2)
 
-setwd("~/Documents/pmweb/dataset") #Necessario adicionar path onde os arquivos estao
-#setwd("~/poa_opendata/dataset")
+#setwd("~/Documents/pmweb/dataset") #Necessario adicionar path onde os arquivos estao
+setwd("~/poa_opendata/dataset")
 
 fNames <- list.files(pattern = "acidentes-2*")
 
@@ -71,22 +71,62 @@ perdas <- data.frame()
 
 year <- 2000
 for(i in 1:17){
-  acidentes[[i]]$ANO <- year
+  acidentes[[i]]$year <- year
   if(i < 15){
     acidentes[[i]]$ONIBUS_MET <- 0
     acidentes[[i]]$FERIDOS_GR <- 0
   }
   perdas <- rbind(perdas, select(acidentes[[i]], AUTO, TAXI, LOTACAO, 
                                  ONIBUS_URB, ONIBUS_MET, ONIBUS_INT, CAMINHAO, 
-                                 MOTO, CARROCA, BICICLETA, OUTRO, FERIDOS, FERIDOS_GR, ANO))
+                                 MOTO, CARROCA, BICICLETA, OUTRO, FERIDOS, FATAIS))
   year = year + 1
 }
 
+
+
 perdas <- as.data.frame(lapply(perdas, function(x) as.numeric(as.character(x))))
-materiais <- perdas %>% group_by(ANO) %>% summarize_all(funs(sum(., na.rm=TRUE)))
+materiais <- perdas %>% summarize_all(funs(sum(., na.rm=TRUE))) %>% melt(id.vars=c("FERIDOS","FATAIS"))
 
-ggplot(melt(materiais[,1:12], id.vars="ANO"), aes(x = as.factor(variable), 
-                             y = value, fill=as.factor(ANO))) + geom_bar(position="stack", stat="identity")  +
-  labs(x="VeÃ­culo", y = "OcorrÃªncias", fill="Ano") + theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(materiais[2:12,], aes(x = variable, 
+                             y = value)) + geom_bar(stat = 'identity', position = 'dodge')  +
+  labs(x="Veículo", y = "Ocorrências") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
 
+feridos <- data.frame(sum(perdas[perdas$AUTO >= 1, ]$FERIDOS, na.rm=TRUE), 
+                      sum(perdas[perdas$TAXI >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$LOTACAO >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_URB >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_MET >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_INT >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$CAMINHAO >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$MOTO >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$CARROCA >= 1, ]$FERIDOS, na.rm=TRUE),
+                      sum(perdas[perdas$BICICLETA >= 1, ]$FERIDOS, na.rm=TRUE))
+
+colnames(feridos) <- c("AUTO", "TAXI", "LOTACAO", "ONIBUS_URB", "ONIBUS_MET", "ONIBUS_INT", "CAMINHAO",
+                       "MOTO", "CARROCA", "BICICLETA")
+
+ggplot(melt(feridos), aes(x = variable, 
+                             y = value)) + geom_bar(stat = 'identity', position = 'dodge')  +
+  labs(x="Veículo", y = "Ocorrências") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
+
+
+FATAIS <- data.frame(sum(perdas[perdas$AUTO >= 1, ]$FATAIS, na.rm=TRUE), 
+                      sum(perdas[perdas$TAXI >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$LOTACAO >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_URB >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_MET >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$ONIBUS_INT >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$CAMINHAO >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$MOTO >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$CARROCA >= 1, ]$FATAIS, na.rm=TRUE),
+                      sum(perdas[perdas$BICICLETA >= 1, ]$FATAIS, na.rm=TRUE))
+
+colnames(FATAIS) <- c("AUTO", "TAXI", "LOTACAO", "ONIBUS_URB", "ONIBUS_MET", "ONIBUS_INT", "CAMINHAO",
+                       "MOTO", "CARROCA", "BICICLETA")
+
+ggplot(melt(FATAIS), aes(x = variable, 
+                          y = value)) + geom_bar(stat = 'identity', position = 'dodge')  +
+  labs(x="Veículo", y = "Ocorrências") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")
